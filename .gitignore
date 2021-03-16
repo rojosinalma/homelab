@@ -1,0 +1,5 @@
+pihole/*
+!pihole/.keep
+
+downloads/*
+!downloads/.keep
