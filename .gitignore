@@ -3,3 +3,15 @@ pihole/*
 
 downloads/*
 !downloads/.keep
+
+avorion/*
+bitwarden/*
+grafana/*
+pihole/*
+prometheus/*
+
+satisfactory/*
+!satisfactory/Dockerfile
+
+traefik/*
+valheim/*
