@@ -13,8 +13,8 @@ services:
       - "53:53/tcp"
       - "53:53/udp"
       - "67:67/udp"
-      - "80:80/tcp"
-      - "443:443/tcp"
+      - "8081:80/tcp"
+      - "4433:443/tcp"
     environment:
       TZ: 'Europe/Berlin'
     volumes:
@@ -35,7 +35,67 @@ services:
     restart: unless-stopped
     mem_limit: 1000m
 
-  # ## Elasticsearh
+  satisfactory:
+   container_name: 'satisfactory'
+   hostname: 'satisfactory-server'
+   image: 'wolveix/satisfactory-server:latest'
+   ports:
+    - '7777:7777/udp'
+    - '15000:15000/udp'
+    - '15777:15777/udp'
+   environment:
+    - DEBUG=false
+    - MAXPLAYERS=8
+    - PGID=1000
+    - PUID=1000
+    - SKIPUPDATE=false
+    - STEAMBETA=true
+   restart: unless-stopped
+   volumes:
+    - '/home/rojo/dev/satisfactory:/config'
+
+  cloudflare-ddns:
+    image: timothyjmiller/cloudflare-ddns:latest
+    container_name: cloudflare-ddns
+    security_opt:
+      - no-new-privileges:true
+    network_mode: "host"
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./cloudflare-ddns/config.json:/config.json
+    restart: unless-stopped
+
+  discord-musicbot:
+    build: ./discord-musicbot
+    image: discord-musicbot:latest
+    container_name: discord-musicbot
+    restart: unless-stopped
+    ports:
+      - '80:3000/tcp'
+    networks:
+      - lavalink-net
+    # depends_on:
+    #   - lavalink
+    volumes:
+      - ./discord-musicbot/botconfig.js:/usr/src/app/botconfig.js:ro
+
+  lavalink:
+    image: fredboat/lavalink:dev
+    container_name: music-lavalink
+    hostname: lavalink
+    restart: unless-stopped
+    networks:
+      - lavalink-net
+    volumes:
+      - ./application.yml:/opt/Lavalink/application.yml:ro
+
+networks:
+  lavalink-net:
+
+
+# ## Elasticsearh
   # es01:
   #   image: docker.elastic.co/elasticsearch/elasticsearch:7.11.2
   #   container_name: es01
@@ -92,27 +152,3 @@ services:
   #     - data03:/usr/share/elasticsearch/data
   #   networks:
   #     - elastic
-
-  satisfactory:
-    container_name: satisfactory
-    build: ./satisfactory
-    restart: always
-    ports:
-      - 15000:15000/udp
-      - 15777:15777/udp
-      - 7777:7777/udp
-    volumes:
-      - '/home/rojo/dev/satisfactory:/home/steam/Satisfactory-dedicated:rw'
-
-  cloudflare-ddns:
-    image: timothyjmiller/cloudflare-ddns:latest
-    container_name: cloudflare-ddns
-    security_opt:
-      - no-new-privileges:true
-    network_mode: "host"
-    environment:
-      - PUID=1000
-      - PGID=1000
-    volumes:
-      - ./cloudflare-ddns/config.json:/config.json
-    restart: unless-stopped
