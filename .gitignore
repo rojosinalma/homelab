@@ -7,9 +7,11 @@ downloads/*
 avorion/*
 bitwarden/*
 cloudflare-ddns/*
+discord-f1x/*
+discord-jmusicbot/config.txt
 discord-musicbot/*
 grafana/*
-jmusicbot/config.txt
+
 pihole/*
 prometheus/*
 

@@ -1,5 +1,5 @@
 FROM openjdk:11
-RUN mkdir -p /usr/src/JMusicBot/
+
 WORKDIR /usr/src/JMusicBot/
 COPY . .
 

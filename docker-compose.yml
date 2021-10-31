@@ -81,23 +81,34 @@ services:
     volumes:
       - ./discord-musicbot/botconfig.js:/usr/src/app/botconfig.js:ro
 
-  lavalink:
-    image: fredboat/lavalink:dev
-    container_name: music-lavalink
-    hostname: lavalink
-    restart: unless-stopped
-    networks:
-      - lavalink-net
-    volumes:
-      - ./application.yml:/opt/Lavalink/application.yml:ro
+  # lavalink:
+  #   image: fredboat/lavalink:dev
+  #   container_name: lavalink
+  #   hostname: lavalink
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8000:80/tcp"
+  #     - "8000:80/udp"
+  #   networks:
+  #     - lavalink-net
+  #   volumes:
+  #     - ./application.yml:/opt/Lavalink/application.yml:ro
 
-  jmusicbot:
-    build: ./jmusicbot
-    image: jmusicbot:latest
-    container_name: jmusicbot
+  discord-jmusicbot:
+    build: ./discord-jmusicbot
+    image: discord-jmusicbot:latest
+    container_name: discord-jmusicbot
     restart: unless-stopped
     volumes:
-      - ./jmusicbot/config.txt:/usr/src/JMusicBot/config.txt:ro
+      - ./discord-jmusicbot/config.txt:/usr/src/JMusicBot/config.txt:ro
+
+  discord-f1x:
+    build: ./discord-f1x
+    image: discord-f1x:latest
+    container_name: discord-f1x
+    restart: unless-stopped
+    volumes:
+      - ./discord-f1x/.env:/usr/src/f1x/.env:ro
 
 networks:
   lavalink-net:
