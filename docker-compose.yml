@@ -91,6 +91,14 @@ services:
     volumes:
       - ./application.yml:/opt/Lavalink/application.yml:ro
 
+  jmusicbot:
+    build: ./jmusicbot
+    image: jmusicbot:latest
+    container_name: jmusicbot
+    restart: unless-stopped
+    volumes:
+      - ./jmusicbot/config.txt:/usr/src/JMusicBot/config.txt:ro
+
 networks:
   lavalink-net:
 

@@ -9,6 +9,7 @@ bitwarden/*
 cloudflare-ddns/*
 discord-musicbot/*
 grafana/*
+jmusicbot/config.txt
 pihole/*
 prometheus/*
 
