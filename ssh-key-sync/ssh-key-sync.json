@@ -1,0 +1,12 @@
+{
+  "system": [
+    {"user": "rojo", "authorized_keys_file": "/home/rojo/.ssh/authorized_keys"}
+  ],
+
+  "github": {
+    "url": "api.github.com",
+    "accounts": [
+      {"username": "rojosinalma", "system_user": "rojo"}
+    ]
+  }
+}
