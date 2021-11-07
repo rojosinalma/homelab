@@ -1,6 +1,8 @@
 [submodule "discord-musicbot"]
 	path = discord-musicbot
 	url = git@github.com:SudhanPlayz/Discord-MusicBot.git
+  ignore = dirty
 [submodule "discord-f1x"]
 	path = discord-f1x
 	url = git@github.com:rojosinalma/cord.git
+  ignore = dirty
