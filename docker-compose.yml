@@ -76,23 +76,23 @@ services:
       - '80:3000/tcp'
     networks:
       - lavalink-net
-    # depends_on:
-    #   - lavalink
+    depends_on:
+      - lavalink
     volumes:
       - ./discord-musicbot/botconfig.js:/usr/src/app/botconfig.js:ro
 
-  # lavalink:
-  #   image: fredboat/lavalink:dev
-  #   container_name: lavalink
-  #   hostname: lavalink
-  #   restart: unless-stopped
-  #   ports:
-  #     - "8000:80/tcp"
-  #     - "8000:80/udp"
-  #   networks:
-  #     - lavalink-net
-  #   volumes:
-  #     - ./application.yml:/opt/Lavalink/application.yml:ro
+  lavalink:
+    image: fredboat/lavalink:dev
+    container_name: lavalink
+    hostname: lavalink
+    restart: unless-stopped
+    ports:
+      - "8000:80/tcp"
+      - "8000:80/udp"
+    networks:
+      - lavalink-net
+    volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
 
   discord-jmusicbot:
     build: ./discord-jmusicbot
@@ -110,64 +110,19 @@ services:
     volumes:
       - ./discord-f1x/.env:/usr/src/f1x/.env:ro
 
+  ftpgrab:
+    image: crazymax/ftpgrab:latest
+    container_name: ftpgrab
+    volumes:
+      - ./ftpgrab/db:/db:rw
+      - ./ftpgrab/download:/download:rw
+      - ./ftpgrab/ftpgrab.yml:/ftpgrab.yml:ro
+    environment:
+      - "TZ=Europe/Berlin"
+      - "SCHEDULE=*/30 * * * *"
+      - "LOG_LEVEL=info"
+      - "LOG_JSON=false"
+    restart: always 
+
 networks:
   lavalink-net:
-
-
-# ## Elasticsearh
-  # es01:
-  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.11.2
-  #   container_name: es01
-  #   environment:
-  #     - node.name=es01
-  #     - cluster.name=es-docker-cluster
-  #     - discovery.seed_hosts=es02,es03
-  #     - cluster.initial_master_nodes=es01,es02,es03
-  #     - bootstrap.memory_lock=true
-  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-  #   ulimits:
-  #     memlock:
-  #       soft: -1
-  #       hard: -1
-  #   volumes:
-  #     - data01:/usr/share/elasticsearch/data
-  #   ports:
-  #     - 9200:9200
-  #   networks:
-  #     - elastic
-  # es02:
-  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.11.2
-  #   container_name: es02
-  #   environment:
-  #     - node.name=es02
-  #     - cluster.name=es-docker-cluster
-  #     - discovery.seed_hosts=es01,es03
-  #     - cluster.initial_master_nodes=es01,es02,es03
-  #     - bootstrap.memory_lock=true
-  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-  #   ulimits:
-  #     memlock:
-  #       soft: -1
-  #       hard: -1
-  #   volumes:
-  #     - data02:/usr/share/elasticsearch/data
-  #   networks:
-  #     - elastic
-  # es03:
-  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.11.2
-  #   container_name: es03
-  #   environment:
-  #     - node.name=es03
-  #     - cluster.name=es-docker-cluster
-  #     - discovery.seed_hosts=es01,es02
-  #     - cluster.initial_master_nodes=es01,es02,es03
-  #     - bootstrap.memory_lock=true
-  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-  #   ulimits:
-  #     memlock:
-  #       soft: -1
-  #       hard: -1
-  #   volumes:
-  #     - data03:/usr/share/elasticsearch/data
-  #   networks:
-  #     - elastic
