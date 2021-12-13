@@ -22,3 +22,4 @@ traefik/*
 valheim/*
 
 ftpgrab/*
+!ftpgrab/rotate
