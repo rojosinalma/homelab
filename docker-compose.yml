@@ -67,10 +67,10 @@ services:
       - ./cloudflare-ddns/config.json:/config.json
     restart: unless-stopped
 
-  discord-musicbot:
+  wr3nch:
     build: ./discord-musicbot
     image: discord-musicbot:latest
-    container_name: discord-musicbot
+    container_name: wr3nch
     restart: unless-stopped
     ports:
       - '80:3000/tcp'
@@ -94,18 +94,18 @@ services:
     volumes:
       - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
 
-  discord-jmusicbot:
+  t35t:
     build: ./discord-jmusicbot
     image: discord-jmusicbot:latest
-    container_name: discord-jmusicbot
+    container_name: t35t
     restart: unless-stopped
     volumes:
       - ./discord-jmusicbot/config.txt:/usr/src/JMusicBot/config.txt:ro
 
-  discord-f1x:
+  f1x:
     build: ./discord-f1x
     image: discord-f1x:latest
-    container_name: discord-f1x
+    container_name: f1x
     restart: unless-stopped
     volumes:
       - ./discord-f1x/.env:/usr/src/f1x/.env:ro
