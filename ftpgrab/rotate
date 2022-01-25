@@ -12,5 +12,5 @@ test -f $thelog || touch $thelog
 zip -r "${thedate}.zip" $thefolder | tee -a $thelog
 
 # Delete files older than 30 days
-find . -type f  -mtime +30 -iname "*.zip" | xargs rm -f | tee -a $thelog
+find . -type f  -mtime +10 -iname "*.zip" | xargs rm -f | tee -a $thelog
 

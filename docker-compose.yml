@@ -1,9 +1,150 @@
 version: "3.9"
 services:
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:latest
+    restart: always
+    ports:
+      - 8080
+      - "9443:9443"
+      - "9000:9000"
+    volumes:
+      - "./portainer/data:/data"
+      - ".:/silver/dev"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.portainer.entrypoints=true"
+    #   - "traefik.http.routers.portainer.rule=(Host(`silver.rojo.dev`) || Host(`silver.box`)) && Path(`/portainer`)"
+    #   - "traefik.http.routers.portainer.tls=true"
+    #   - "traefik.http.services.portainer.loadBalancer.server.port=9000"
+    #   - "traefik.http.services.portainer.loadbalancer.server.scheme=https"
+
   dev:
     container_name: dev
     image: ubuntu:latest
     command: sleep infinity
+    restart: unless-stopped
+
+  shellinabox:
+    container_name: shellinabox
+    image: sspreitzer/shellinabox:latest
+    expose:
+      - 4200
+    environment:
+      - SIAB_PASSWORD=thisistheway
+      - SIAB_SUDO=true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.shellinabox.entrypoints=tls"
+      - "traefik.http.routers.shellinabox.rule=(Host(`silver.rojo.dev`) || Host(`silver.box`)) && Path(`/shellinabox`)"
+      - "traefik.http.routers.shellinabox.tls=true"
+      - "traefik.http.services.shellinabox.loadBalancer.server.port=4200"
+      - "traefik.http.services.shellinabox.loadbalancer.server.scheme=https"
+
+  whoami:
+    image: traefik/whoami:latest
+    container_name: "whoami"
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.entrypoints=tls"
+      - "traefik.http.routers.whoami.rule=(Host(`silver.rojo.dev`) || Host(`silver.box`)) && Path(`/whoami`)"
+      - "traefik.http.routers.whoami.tls=true"
+      # - 'traefik.http.routers.whoami.middlewares=authelia@docker'
+
+  traefik:
+    image: "traefik:v2.5"
+    container_name: "traefik"
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    expose:
+      - "8079"
+    env_file:
+      - ./traefik/.env
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik/:/etc/traefik/"
+      - "./traefik/access.log:/var/log/access.log"
+      - "./traefik/acme/acme.json:/etc/traefik/acme/acme.json:rw"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.tls.certresolver=cf"
+      - "traefik.http.routers.dashboard.entryPoints=tls"
+      - "traefik.http.routers.dashboard.tls.domains[0].main=silver.rojo.dev"
+      - "traefik.http.routers.dashboard.tls.domains[0].main=*.rojo.dev"
+      - "traefik.http.routers.dashboard.rule=(Host(`silver.rojo.dev`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))) || (Host(`silver.box`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`)))"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=rojo:$$apr1$$SIZrH8yM$$ePRmpk0kTf6u5sz8FSkMy."
+
+  authelia:
+    image: authelia/authelia
+    container_name: authelia
+    volumes:
+      - ./authelia/config:/config
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.authelia.rule=Host(`authelia.rojo.dev`)'
+      - 'traefik.http.routers.authelia.entrypoints=tls'
+      - 'traefik.http.routers.authelia.tls=true'
+      - 'traefik.http.middlewares.authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://authelia.rojo.dev'
+      - 'traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true'
+      - 'traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Name,Remote-Email'
+    expose:
+      - 9091
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    environment:
+      - TZ=Europe/Berlin
+      - PUID=1000
+      - PGID=1000
+
+  heimdall:
+    image: lscr.io/linuxserver/heimdall
+    container_name: heimdall
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+    volumes:
+      - ./heimdall/config:/config
+    expose:
+      - 80
+      - 443
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.heimdall.tls=false"
+      - "traefik.http.routers.heimdall.entrypoints=web"
+      - "traefik.http.routers.heimdall.rule=Host(`heimdall.silver.box`) || Host(`heimdall.rojo.dev`)"
+      - "traefik.http.services.heimdall.loadbalancer.server.port=80"
+      - "traefik.http.services.heimdall.loadbalancer.server.scheme=http"
+
+  homer:
+    image: b4bz/homer:latest
+    container_name: homer
+    volumes:
+      - ./homer/www/assets:/www/assets
+    environment:
+      - UID=1000
+      - GID=1000
+    ports:
+      - "8082:8080"
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.homer.tls=false"
+      - "traefik.http.routers.homer.entrypoints=web"
+      - "traefik.http.routers.homer.rule=Host(`homer.silver.box`) || Host(`homer.rojo.dev`)"
+      - "traefik.http.services.homer.loadbalancer.server.port=8080"
+      - "traefik.http.services.homer.loadbalancer.server.scheme=http"
 
   pihole:
     container_name: pihole
@@ -12,47 +153,61 @@ services:
     ports:
       - "53:53/tcp"
       - "53:53/udp"
-      - "67:67/udp"
-      - "8081:80/tcp"
-      - "4433:443/tcp"
+      - "8081:80"
+    # expose:
+    #   - 80
     environment:
       TZ: 'Europe/Berlin'
+      VIRTUAL_HOST: silver.box
     volumes:
       - './pihole/etc-pihole/:/etc/pihole/'
       - './pihole/etc-dnsmasq.d/:/etc/dnsmasq.d/'
+      # - './pihole/etc-lighttpd/:/etc/lighttpd/'
     restart: unless-stopped
     mem_limit: 1000m
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pihole.tls=false"
+      - "traefik.http.routers.pihole.entrypoints=web"
+      - "traefik.http.routers.pihole.rule=Host(`pihole.silver.box`) || Host(`pihole.rojo.dev`)"
+      - "traefik.http.services.pihole.loadbalancer.server.port=80"
+      - "traefik.http.services.pihole.loadbalancer.server.scheme=http"
 
-  ## Prometheus
   prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
-    dns: 127.0.0.1
     ports:
       - "9090:9090/tcp"
     volumes:
       - './prometheus/prometheus.yml:/etc/prometheus/prometheus.yml'
     restart: unless-stopped
     mem_limit: 1000m
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.prometheus.entrypoints=tls"
+    #   - "traefik.http.routers.prometheus.rule=Host(`silver.rojo.dev`) && Path(`/prometheus`)"
+    #   - "traefik.http.routers.prometheus.tls=true"
+    #   - "traefik.port=9090"
 
-  satisfactory:
-   container_name: 'satisfactory'
-   hostname: 'satisfactory-server'
-   image: 'wolveix/satisfactory-server:latest'
-   ports:
-    - '7777:7777/udp'
-    - '15000:15000/udp'
-    - '15777:15777/udp'
-   environment:
-    - DEBUG=false
-    - MAXPLAYERS=8
-    - PGID=1000
-    - PUID=1000
-    - SKIPUPDATE=false
-    - STEAMBETA=true
-   restart: unless-stopped
-   volumes:
-    - '/home/rojo/dev/satisfactory:/config'
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    expose:
+      - 3000
+    volumes:
+      - './grafana/data/:/var/lib/grafana'
+      - './grafana/grafana.ini:/etc/grafana/grafana.ini:ro'
+    environment:
+      - "GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource,grafana-piechart-panel"
+    restart: unless-stopped
+    user: '1000'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.entrypoints=tls"
+      - "traefik.http.routers.grafana.rule=Host(`silver.rojo.dev`) && PathPrefix(`/grafana`)"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.services.grafana.loadBalancer.server.port=3000"
+      - "traefik.port=3000"
 
   cloudflare-ddns:
     image: timothyjmiller/cloudflare-ddns:latest
@@ -73,9 +228,7 @@ services:
     container_name: wr3nch
     restart: unless-stopped
     ports:
-      - '80:3000/tcp'
-    networks:
-      - lavalink-net
+      - '81:3000/tcp'
     depends_on:
       - lavalink
     volumes:
@@ -89,8 +242,6 @@ services:
     ports:
       - "8000:80/tcp"
       - "8000:80/udp"
-    networks:
-      - lavalink-net
     volumes:
       - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
 
@@ -122,7 +273,43 @@ services:
       - "SCHEDULE=*/30 * * * *"
       - "LOG_LEVEL=info"
       - "LOG_JSON=false"
-    restart: always 
+    restart: always
 
-networks:
-  lavalink-net:
+  code:
+    image: lscr.io/linuxserver/code-server
+    container_name: code
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      # - PASSWORD=password #optional
+      # - HASHED_PASSWORD= #optional
+      # - SUDO_PASSWORD=password #optional
+      # - SUDO_PASSWORD_HASH= #optional
+      # - PROXY_DOMAIN=code-server.my.domain #optional
+      - DEFAULT_WORKSPACE=/config/dev #optional
+    volumes:
+      - ./code/.config:/home/coder/.config
+      - ./:/config/dev
+    ports:
+      - 8443:8443
+    restart: unless-stopped
+
+  satisfactory:
+    container_name: 'satisfactory'
+    hostname: 'satisfactory-server'
+    image: 'wolveix/satisfactory-server:latest'
+    ports:
+      - '7777:7777/udp'
+      - '15000:15000/udp'
+      - '15777:15777/udp'
+    environment:
+      - DEBUG=false
+      - MAXPLAYERS=8
+      - PGID=1000
+      - PUID=1000
+      - SKIPUPDATE=false
+      - STEAMBETA=true
+    restart: unless-stopped
+    volumes:
+      - '/home/rojo/dev/satisfactory:/config'
