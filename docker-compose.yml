@@ -31,16 +31,18 @@ services:
     image: sspreitzer/shellinabox:latest
     expose:
       - 4200
+    env_file:
+      - ./siab/.env
     environment:
-      - SIAB_PASSWORD=thisistheway
       - SIAB_SUDO=true
+      - SIAB_SSL=false
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.shellinabox.entrypoints=tls"
-      - "traefik.http.routers.shellinabox.rule=(Host(`silver.rojo.dev`) || Host(`silver.box`)) && Path(`/shellinabox`)"
-      - "traefik.http.routers.shellinabox.tls=true"
+      - "traefik.http.routers.shellinabox.entrypoints=web"
+      - "traefik.http.routers.shellinabox.rule=Host(`siab.silver.box`)"
+      - "traefik.http.routers.shellinabox.tls=false"
       - "traefik.http.services.shellinabox.loadBalancer.server.port=4200"
-      - "traefik.http.services.shellinabox.loadbalancer.server.scheme=https"
+      - "traefik.http.services.shellinabox.loadbalancer.server.scheme=http"
 
   whoami:
     image: traefik/whoami:latest
