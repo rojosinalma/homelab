@@ -4,21 +4,21 @@ services:
     container_name: portainer
     image: portainer/portainer-ce:latest
     restart: always
-    ports:
+    expose:
       - 8080
-      - "9443:9443"
-      - "9000:9000"
+      - 9443
+      - 9000
     volumes:
       - "./portainer/data:/data"
       - ".:/silver/dev"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    # labels:
-    #   - "traefik.enable=true"
-    #   - "traefik.http.routers.portainer.entrypoints=true"
-    #   - "traefik.http.routers.portainer.rule=(Host(`silver.rojo.dev`) || Host(`silver.box`)) && Path(`/portainer`)"
-    #   - "traefik.http.routers.portainer.tls=true"
-    #   - "traefik.http.services.portainer.loadBalancer.server.port=9000"
-    #   - "traefik.http.services.portainer.loadbalancer.server.scheme=https"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.entrypoints=web"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.silver.box`)"
+      - "traefik.http.routers.portainer.tls=false"
+      - "traefik.http.services.portainer.loadBalancer.server.port=9000"
+      - "traefik.http.services.portainer.loadbalancer.server.scheme=http"
 
   dev:
     container_name: dev
@@ -33,9 +33,6 @@ services:
       - 4200
     env_file:
       - ./siab/.env
-    environment:
-      - SIAB_SUDO=true
-      - SIAB_SSL=false
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.shellinabox.entrypoints=web"
@@ -50,10 +47,9 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.whoami.entrypoints=tls"
+      - "traefik.http.routers.whoami.entrypoints=web"
       - "traefik.http.routers.whoami.rule=(Host(`silver.rojo.dev`) || Host(`silver.box`)) && Path(`/whoami`)"
-      - "traefik.http.routers.whoami.tls=true"
-      # - 'traefik.http.routers.whoami.middlewares=authelia@docker'
+      - "traefik.http.routers.whoami.tls=false"
 
   traefik:
     image: "traefik:v2.5"
@@ -80,7 +76,7 @@ services:
       - "traefik.http.routers.dashboard.entryPoints=tls"
       - "traefik.http.routers.dashboard.tls.domains[0].main=silver.rojo.dev"
       - "traefik.http.routers.dashboard.tls.domains[0].main=*.rojo.dev"
-      - "traefik.http.routers.dashboard.rule=(Host(`silver.rojo.dev`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))) || (Host(`silver.box`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`)))"
+      - "traefik.http.routers.dashboard.rule=(Host(`silver.box`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`)))"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.middlewares=auth"
       - "traefik.http.middlewares.auth.basicauth.users=rojo:$$apr1$$SIZrH8yM$$ePRmpk0kTf6u5sz8FSkMy."
@@ -137,8 +133,8 @@ services:
     environment:
       - UID=1000
       - GID=1000
-    ports:
-      - "8082:8080"
+    expose:
+      - 8080
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -155,9 +151,8 @@ services:
     ports:
       - "53:53/tcp"
       - "53:53/udp"
-      - "8081:80"
-    # expose:
-    #   - 80
+    expose:
+      - 80
     environment:
       TZ: 'Europe/Berlin'
       VIRTUAL_HOST: silver.box
@@ -166,7 +161,6 @@ services:
       - './pihole/etc-dnsmasq.d/:/etc/dnsmasq.d/'
       # - './pihole/etc-lighttpd/:/etc/lighttpd/'
     restart: unless-stopped
-    mem_limit: 1000m
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pihole.tls=false"
@@ -178,18 +172,18 @@ services:
   prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
-    ports:
-      - "9090:9090/tcp"
+    expose:
+      - 9090
     volumes:
       - './prometheus/prometheus.yml:/etc/prometheus/prometheus.yml'
     restart: unless-stopped
-    mem_limit: 1000m
-    # labels:
-    #   - "traefik.enable=true"
-    #   - "traefik.http.routers.prometheus.entrypoints=tls"
-    #   - "traefik.http.routers.prometheus.rule=Host(`silver.rojo.dev`) && Path(`/prometheus`)"
-    #   - "traefik.http.routers.prometheus.tls=true"
-    #   - "traefik.port=9090"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.entrypoints=web"
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus.silver.box`)"
+      - "traefik.http.routers.prometheus.tls=false"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+      - "traefik.http.services.prometheus.loadbalancer.server.scheme=http"
 
   grafana:
     container_name: grafana
@@ -205,11 +199,11 @@ services:
     user: '1000'
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.grafana.entrypoints=tls"
-      - "traefik.http.routers.grafana.rule=Host(`silver.rojo.dev`) && PathPrefix(`/grafana`)"
-      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.entrypoints=web"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.silver.box`)"
+      - "traefik.http.routers.grafana.tls=false"
       - "traefik.http.services.grafana.loadBalancer.server.port=3000"
-      - "traefik.port=3000"
+      - "traefik.http.services.grafana.loadbalancer.server.scheme=http"
 
   cloudflare-ddns:
     image: timothyjmiller/cloudflare-ddns:latest
@@ -229,21 +223,27 @@ services:
     image: discord-musicbot:latest
     container_name: wr3nch
     restart: unless-stopped
-    ports:
-      - '81:3000/tcp'
+    expose:
+      - 3000
     depends_on:
       - lavalink
     volumes:
       - ./discord-musicbot/botconfig.js:/usr/src/app/botconfig.js:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wr3nch.entrypoints=web"
+      - "traefik.http.routers.wr3nch.rule=Host(`wr3nch.silver.box`)"
+      - "traefik.http.routers.wr3nch.tls=false"
+      - "traefik.http.services.wr3nch.loadBalancer.server.port=3000"
+      - "traefik.http.services.wr3nch.loadbalancer.server.scheme=http"
 
   lavalink:
     image: fredboat/lavalink:dev
     container_name: lavalink
     hostname: lavalink
     restart: unless-stopped
-    ports:
-      - "8000:80/tcp"
-      - "8000:80/udp"
+    expose:
+      - 80
     volumes:
       - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
 
@@ -293,8 +293,8 @@ services:
     volumes:
       - ./code/.config:/home/coder/.config
       - ./:/config/dev
-    ports:
-      - 8443:8443
+    expose:
+      - 8443
     restart: unless-stopped
 
   satisfactory:
